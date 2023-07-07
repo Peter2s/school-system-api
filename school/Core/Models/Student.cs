@@ -10,6 +10,7 @@ namespace school.Core.Models
         public string LastName { get; set; }
         [Required]
         public string StudentPhoto { get; set; }
+        [Required]
         public string Note { get; set; }
 
 

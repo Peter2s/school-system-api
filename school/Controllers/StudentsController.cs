@@ -40,12 +40,10 @@ namespace school.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateSutdents([FromForm] IEnumerable<AddStudentDto> studentDtos)
+        public async Task<IActionResult> CreateSutdents([FromForm] IEnumerable<AddStudentDto> studentDtos)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }          
+           // if (!ModelState.IsValid) return BadRequest(ModelState.ValidationState);
+                     
             if (studentDtos == null  ) return BadRequest("no students was sent");
             //if (!ModelState.IsValid) return BadRequest("error");
             
