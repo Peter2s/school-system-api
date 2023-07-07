@@ -1,14 +1,10 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
-using Microsoft.AspNetCore.Razor.TagHelpers;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using school.Core.Interfaces;
 using school.Core.Models;
 using school.Dtos.StudentDtos;
 using school.Helpers;
-using school.Services;
 
 namespace school.Controllers
 {
@@ -26,38 +22,79 @@ namespace school.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetStudents()
+        [HttpGet()]
+        public async Task<IActionResult> getAll(int page = 1, int limit = 5)
         {
-            return Ok(await _studentRepo.getList());
+            var records = await _studentRepo.getList(page, limit);
+            var totalCount = _studentRepo.getCount();
+            var response = new
+            {
+                TotalCount =totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)limit),
+                CurrentPage = page,
+                PageSize = limit,
+                Records = records
+            };
+
+            return Ok(response);
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateSutdents([FromForm] IEnumerable<List<AddStudentDto>> studentDtos)
+        public async Task<ActionResult> CreateSutdents([FromForm] IEnumerable<AddStudentDto> studentDtos)
         {
-            var x = studentDtos;
-            return Ok(studentDtos);
-            /*
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }          
             if (studentDtos == null  ) return BadRequest("no students was sent");
-            if (!ModelState.IsValid) return BadRequest("error");
+            //if (!ModelState.IsValid) return BadRequest("error");
             
-            var students = _mapper.Map<List<Student>>(studentDtos);
+            var students = new List<Student>();
             foreach (var studentDto in studentDtos)
             {
                 var student = _mapper.Map<AddStudentDto, Student>(studentDto);
+                try
+                {
+                    var image = UploadImageHelper.SaveImage(studentDto.ImageFile, "Storage");
+                    if (image == null) return BadRequest();
+                    student.StudentPhoto = image;
 
-                var image = UploadImageHelper.SaveImage(studentDto.ImageFile,"Storage");
-                if (image == null) return BadRequest();
-                student.StudentPhoto = image;
+                }
+                catch(ArgumentException ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+               
                 students.Add(student);
             }
            
 
             await _studentRepo.AddMany(students);
             return Ok(students);
-            */
-
+           
         }
-            
+        [HttpGet("generateExcel")]
+        public async Task<IActionResult> generateExcelAsync()
+        {
+            List<Student> students = (List<Student>)await _studentRepo.getList();
+                var workbook = ExcelFileHelper.CreateExcelFile(students);
+          
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    stream.Position = 0;
+
+                    // Create a FileContentResult for downloading
+                    FileContentResult fileContentResult = new FileContentResult(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    {
+                        FileDownloadName = "students.xlsx"
+                    };
+                workbook.Dispose();
+                return fileContentResult;
+                }
+                
+            }
+        }
+
     }
-}
+

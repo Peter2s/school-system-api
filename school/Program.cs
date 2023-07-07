@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using school.Core.Interfaces;
 using school.Data;
+using school.Error;
 using school.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddTransient(typeof(IBaseRepo<>), typeof(BaseRepository<>));
 
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(Program));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -43,6 +44,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 
 app.UseAuthorization();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.MapControllers();
 

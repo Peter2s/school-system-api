@@ -20,9 +20,17 @@ namespace school.Repositories
             return rows;
         }
 
+        public async Task<IReadOnlyList<T>> getList(int page  , int limit)
+        {
+           return await  _context.Set<T>().Skip( (page - 1) * limit).Take(limit).ToListAsync();
+        }
         public async Task<IReadOnlyList<T>> getList()
         {
-           return await  _context.Set<T>().ToListAsync();
+            return await _context.Set<T>().ToListAsync();
+        }
+        public int getCount()
+        {
+            return _context.Set<T>().Count();
         }
 
     }
